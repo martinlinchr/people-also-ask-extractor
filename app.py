@@ -1,7 +1,7 @@
 import streamlit as st
 from scraper import extract_paa
 import requests
-import json
+import time
 
 st.title("Google 'People Also Ask' Scraper")
 
