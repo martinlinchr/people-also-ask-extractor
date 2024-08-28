@@ -30,7 +30,7 @@ def extract_paa(query):
         
         paa_elements = driver.find_elements(By.CSS_SELECTOR, "div[jsname='Cpkphb']")
         
-        for element in paa_elements:
+        for element in paa_elements[:20]:  # Limit to 20 questions
             question = element.find_element(By.CSS_SELECTOR, "div[jsname='jIA8B']").text
             
             element.find_element(By.CSS_SELECTOR, "div[jsname='gZjhIf']").click()
