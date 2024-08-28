@@ -1,42 +1,33 @@
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 import time
+import random
 
 def extract_paa(query):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(f"https://www.google.com/search?q={query}")
-
-        paa_data = []
+    url = f"https://www.google.com/search?q={query}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, 'lxml')
+    
+    paa_data = []
+    paa_elements = soup.select('div.related-question-pair')
+    
+    for element in paa_elements[:20]:  # Limit to 20 questions
+        question = element.select_one('div.match-mod-horizontal-padding')
+        answer = element.select_one('div.mod')
         
-        try:
-            # Wait for PAA box to load
-            page.wait_for_selector('div[jsname="N760b"]', timeout=10000)
-            
-            for i in range(20):  # Try to extract up to 20 questions
-                paa_elements = page.query_selector_all('div[jsname="Cpkphb"]')
-                if i >= len(paa_elements):
-                    break
-                
-                element = paa_elements[i]
-                question = element.query_selector('div[jsname="jIA8B"]').inner_text()
-                
-                # Click to expand answer
-                element.query_selector('div[jsname="gZjhIf"]').click()
-                
-                # Wait for answer to load
-                page.wait_for_selector('div[jsname="F79BRe"]', timeout=5000)
-                
-                answer = element.query_selector('div[jsname="F79BRe"]').inner_text()
-                
-                paa_data.append({"question": question, "answer": answer})
-                
-                time.sleep(1)
+        if question and answer:
+            paa_data.append({
+                "question": question.get_text(strip=True),
+                "answer": answer.get_text(strip=True)
+            })
         
-        finally:
-            browser.close()
-        
-        return paa_data
+        time.sleep(random.uniform(0.5, 1.5))  # Random delay between requests
+    
+    return paa_data
 
 if __name__ == "__main__":
     print(extract_paa("example query"))
